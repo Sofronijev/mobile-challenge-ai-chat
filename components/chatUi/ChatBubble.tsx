@@ -1,7 +1,8 @@
 import { useColors } from '@/hooks/useColors';
 import { UIMessage } from 'ai';
 import React, { FC } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import ActionIconButton from './ActionIconButton';
 
 type Props = {
   id: string;
@@ -12,12 +13,16 @@ type Props = {
 const ChatBubble: FC<Props> = ({ role, parts, id }) => {
   const tColors = useColors();
   const isUser = role === 'user';
+
   return (
     <>
       {parts.map((part, i) => {
-        switch (part.type) {
-          case 'text':
-            return (
+        const isTextMessage = part.type === 'text';
+        const isWeatherData = part.type === 'tool-weather';
+        const validMessage = isTextMessage || isWeatherData;
+        return (
+          <View key={`${id}-${i}`}>
+            {isTextMessage && (
               <Text
                 style={[
                   styles.message,
@@ -30,21 +35,27 @@ const ChatBubble: FC<Props> = ({ role, parts, id }) => {
 
                   isUser && styles.messageUser,
                 ]}
-                key={`${id}-${i}`}
               >
                 {part.text}
               </Text>
-            );
-          case 'tool-weather':
-            return (
-              <Text
-                key={`${id}-${i}`}
-                style={[styles.message, { color: tColors.text }]}
-              >
+            )}
+            {isWeatherData && (
+              <Text style={[styles.message, { color: tColors.text }]}>
                 {JSON.stringify(part, null, 2)}
               </Text>
-            );
-        }
+            )}
+            {!isUser && validMessage && (
+              <View style={styles.actionButtons}>
+                <ActionIconButton name="doc.on.doc" />
+                <ActionIconButton name="speaker.2" />
+                <ActionIconButton name="hand.thumbsup" />
+                <ActionIconButton name="hand.thumbsdown" />
+                <ActionIconButton name="arrow.2.circlepath" />
+                <ActionIconButton name="tray.and.arrow.up" />
+              </View>
+            )}
+          </View>
+        );
       })}
     </>
   );
@@ -61,5 +72,10 @@ const styles = StyleSheet.create({
     padding: 12,
     alignSelf: 'flex-end',
     borderRadius: 16,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingTop: 12,
   },
 });

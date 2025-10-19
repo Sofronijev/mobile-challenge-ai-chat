@@ -143,7 +143,7 @@ export default function App() {
               style={[styles.icon, { backgroundColor: tColors.text }]}
             >
               <IconSymbol
-                name={showMic ? 'speaker.wave.1' : 'arrow.up'}
+                name={showMic ? 'waveform' : 'arrow.up'}
                 color={tColors.background}
               />
             </TouchableOpacity>

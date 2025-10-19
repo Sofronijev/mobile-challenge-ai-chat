@@ -9,7 +9,7 @@ type IconMapping = Record<
   SymbolViewProps['name'],
   ComponentProps<typeof MaterialIcons>['name']
 >;
-type IconSymbolName = keyof typeof MAPPING;
+export type IconSymbolName = keyof typeof MAPPING;
 
 /**
  * Add your SF Symbols to Material Icons mappings here.
@@ -24,7 +24,13 @@ const MAPPING = {
   'arrow.up': 'arrow-upward',
   plus: 'add',
   mic: 'mic-none',
-  'speaker.wave.1': 'graphic-eq',
+  'waveform': 'graphic-eq',
+  'doc.on.doc': 'content-copy',
+  'speaker.2': 'volume-up',
+  'hand.thumbsup': 'thumb-up-off-alt',
+  'hand.thumbsdown': 'thumb-down-off-alt',
+  'arrow.2.circlepath': 'refresh',
+  'tray.and.arrow.up': 'ios-share',
 } as IconMapping;
 /**
  * An icon component that uses native SF Symbols on iOS, and Material Icons on Android and web.
