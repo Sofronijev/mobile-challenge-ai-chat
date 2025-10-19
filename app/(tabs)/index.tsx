@@ -1,6 +1,7 @@
 import AnimatedLoading from '@/components/chatUi/AnimatedLoading';
 import ChatBubble from '@/components/chatUi/ChatBubble';
 import ChatHeader from '@/components/chatUi/ChatHeader';
+import ChatNullScreen from '@/components/chatUi/ChatNullScreen';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useColors } from '@/hooks/useColors';
 import { generateAPIUrl } from '@/utils';
@@ -48,6 +49,7 @@ export default function App() {
   const showMic = !input;
   const isLoadingAnswer = status === 'submitted';
   const isStreaming = status === 'streaming';
+  const isWaitingForResponse = isLoadingAnswer || isStreaming;
 
   const onMessageSend = () => {
     if (showMic) {
@@ -57,6 +59,11 @@ export default function App() {
       sendMessage({ text: input.trim() });
       setInput('');
     }
+  };
+
+  const sendSuggestion = (message: string) => {
+    sendMessage({ text: message.trim() });
+    Keyboard.dismiss();
   };
 
   const onAddFiles = () => {
@@ -83,7 +90,7 @@ export default function App() {
   };
 
   const getSendIcon = () => {
-    if (isStreaming || isLoadingAnswer) return 'stop.fill';
+    if (isWaitingForResponse) return 'stop.fill';
     return showMic ? 'waveform' : 'arrow.up';
   };
 
@@ -113,21 +120,26 @@ export default function App() {
       >
         <ChatHeader isNewChat={!messages.length} />
         <View style={styles.flex}>
-          <FlatList
-            ref={flatListRef}
-            data={messages}
-            renderItem={renderMessages}
-            keyExtractor={keyExtractor}
-            showsVerticalScrollIndicator={false}
-            onScroll={handleScroll}
-            onContentSizeChange={scrollToBottom}
-            ListFooterComponent={FooterComponent}
-          />
+          {!!messages.length ? (
+            <FlatList
+              ref={flatListRef}
+              data={messages}
+              renderItem={renderMessages}
+              keyExtractor={keyExtractor}
+              showsVerticalScrollIndicator={false}
+              onScroll={handleScroll}
+              onContentSizeChange={scrollToBottom}
+              ListFooterComponent={FooterComponent}
+            />
+          ) : (
+            <ChatNullScreen onSendMessage={sendSuggestion} />
+          )}
         </View>
         <View style={styles.controls}>
           <TouchableOpacity
             onPress={onAddFiles}
             style={[styles.icon, { backgroundColor: tColors.greyBackground }]}
+            disabled={isWaitingForResponse}
           >
             <IconSymbol name="plus" color={tColors.text} />
           </TouchableOpacity>
@@ -152,7 +164,7 @@ export default function App() {
               </TouchableOpacity>
             )}
             <TouchableOpacity
-              onPress={isStreaming || isLoadingAnswer ? stop : onMessageSend}
+              onPress={isWaitingForResponse ? stop : onMessageSend}
               style={[styles.icon, { backgroundColor: tColors.text }]}
             >
               <IconSymbol name={getSendIcon()} color={tColors.background} />
