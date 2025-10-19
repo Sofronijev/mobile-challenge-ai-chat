@@ -1,3 +1,4 @@
+import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { generateAPIUrl } from '@/utils';
 import { useChat } from '@ai-sdk/react';
@@ -11,6 +12,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   useColorScheme,
   View,
 } from 'react-native';
@@ -29,6 +31,25 @@ export default function App() {
   const tColors = Colors[colorScheme];
 
   if (error) return <Text>{error.message}</Text>;
+
+  const showMic = !input;
+
+  const onMessageSend = () => {
+    if (showMic) {
+      // Record message
+    } else {
+      sendMessage({ text: input });
+      setInput('');
+    }
+  };
+
+  const onAddFiles = () => {
+    // Add files to chat...
+  };
+
+  const onOpenMic = () => {
+    // Allow voice input
+  };
 
   return (
     <SafeAreaView
@@ -71,23 +92,43 @@ export default function App() {
             </View>
           ))}
         </ScrollView>
-        <View style={styles.inputContainer}>
-          <TextInput
+        <View style={styles.controls}>
+          <TouchableOpacity
+            onPress={onAddFiles}
+            style={[styles.icon, { backgroundColor: tColors.greyBackground }]}
+          >
+            <IconSymbol name="plus" color={tColors.text} />
+          </TouchableOpacity>
+          <View
             style={[
-              styles.inputText,
-              { color: tColors.text, backgroundColor: tColors.greyBackground },
+              styles.inputContainer,
+              { backgroundColor: tColors.greyBackground },
             ]}
-            placeholder="Say something..."
-            multiline
-            value={input}
-            onChangeText={setInput}
-            onSubmitEditing={e => {
-              e.preventDefault();
-              sendMessage({ text: input });
-              setInput('');
-            }}
-            autoFocus={true}
-          />
+          >
+            <TextInput
+              style={[styles.inputText, { color: tColors.text }]}
+              placeholder="Ask anything"
+              multiline
+              value={input}
+              onChangeText={setInput}
+              autoFocus={true}
+              placeholderTextColor={tColors.placeholder}
+            />
+            {showMic && (
+              <TouchableOpacity onPress={onOpenMic} style={[styles.icon]}>
+                <IconSymbol name="mic" color={tColors.greyIcon} />
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              onPress={onMessageSend}
+              style={[styles.icon, { backgroundColor: tColors.text }]}
+            >
+              <IconSymbol
+                name={showMic ? 'speaker.wave.1' : 'arrow.up'}
+                color={tColors.background}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -101,11 +142,30 @@ const styles = StyleSheet.create({
   },
   flex: { flex: 1 },
   msgContainer: { marginVertical: 8 },
-  msgText: { fontWeight: 700 },
-  inputContainer: { marginTop: 8 },
+  msgText: {
+    fontWeight: 700,
+    fontSize: 25,
+  },
+  controls: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  inputContainer: {
+    flex: 1,
+    marginTop: 8,
+    flexDirection: 'row',
+    borderRadius: 24,
+    overflow: 'hidden',
+  },
   inputText: {
     padding: 12,
-    marginBottom: 8,
-    borderRadius: 24,
+    flex: 1,
+    fontSize: 16,
+  },
+  icon: {
+    margin: 8,
+    padding: 4,
+    borderRadius: 20,
+    alignSelf: 'flex-end',
   },
 });
