@@ -6,26 +6,33 @@ import { generateAPIUrl } from '@/utils';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport, UIDataTypes, UIMessage, UITools } from 'ai';
 import { fetch as expoFetch } from 'expo/fetch';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   FlatList,
+  InteractionManager,
+  Keyboard,
   KeyboardAvoidingView,
   ListRenderItem,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   Platform,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type Message = UIMessage<unknown, UIDataTypes, UITools>;
 
 const keyExtractor = (item: Message) => item.id;
+const BOTTOM_THRESHOLD = 20;
 
 export default function App() {
   const [input, setInput] = useState('');
+  const [isUserAtBottom, setIsUserAtBottom] = useState(true);
+
   const { messages, error, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({
       fetch: expoFetch as unknown as typeof globalThis.fetch,
@@ -33,6 +40,8 @@ export default function App() {
     }),
     onError: error => console.error(error, 'ERROR'),
   });
+  const flatListRef = useRef<FlatList>(null);
+
   const tColors = useColors();
 
   if (error) return <Text>{error.message}</Text>;
@@ -44,6 +53,7 @@ export default function App() {
     if (showMic) {
       // Record message
     } else {
+      Keyboard.dismiss();
       sendMessage({ text: input.trim() });
       setInput('');
     }
@@ -55,6 +65,21 @@ export default function App() {
 
   const onOpenMic = () => {
     // Allow voice input
+  };
+
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    const distanceFromBottom =
+      contentSize.height - (contentOffset.y + layoutMeasurement.height);
+    setIsUserAtBottom(distanceFromBottom < BOTTOM_THRESHOLD);
+  };
+
+  const scrollToBottom = () => {
+    if (isUserAtBottom) {
+      InteractionManager.runAfterInteractions(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      });
+    }
   };
 
   const renderMessages: ListRenderItem<Message> = ({ item }) => (
@@ -76,10 +101,13 @@ export default function App() {
       >
         <View style={styles.flex}>
           <FlatList
+            ref={flatListRef}
             data={messages}
             renderItem={renderMessages}
             keyExtractor={keyExtractor}
             showsVerticalScrollIndicator={false}
+            onScroll={handleScroll}
+            onContentSizeChange={scrollToBottom}
             ListFooterComponent={isLoadingAnswer ? <AnimatedLoading /> : null}
           />
         </View>
