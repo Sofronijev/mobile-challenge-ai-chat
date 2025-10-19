@@ -1,0 +1,9 @@
+node_modules/
+.expo/
+dist/
+build/
+*.lock
+*.log
+.env*
+coverage/
+.DS_Store
