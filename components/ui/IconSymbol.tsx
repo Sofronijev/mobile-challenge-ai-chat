@@ -24,13 +24,18 @@ const MAPPING = {
   'arrow.up': 'arrow-upward',
   plus: 'add',
   mic: 'mic-none',
-  'waveform': 'graphic-eq',
+  waveform: 'graphic-eq',
   'doc.on.doc': 'content-copy',
   'speaker.2': 'volume-up',
   'hand.thumbsup': 'thumb-up-off-alt',
   'hand.thumbsdown': 'thumb-down-off-alt',
   'arrow.2.circlepath': 'refresh',
   'tray.and.arrow.up': 'ios-share',
+  'square.and.pencil': 'edit-note',
+  'line.horizontal.3.decrease': 'menu',
+  ellipsis: 'more-horiz',
+  'lock.icloud': 'lock-outline',
+  'stop.fill': 'stop'
 } as IconMapping;
 /**
  * An icon component that uses native SF Symbols on iOS, and Material Icons on Android and web.

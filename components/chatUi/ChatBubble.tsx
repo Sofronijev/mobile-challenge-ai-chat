@@ -1,5 +1,6 @@
 import { useColors } from '@/hooks/useColors';
 import { UIMessage } from 'ai';
+import * as Clipboard from 'expo-clipboard';
 import React, { FC } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import ActionIconButton from './ActionIconButton';
@@ -8,6 +9,10 @@ type Props = {
   id: string;
   role: UIMessage['role'];
   parts: UIMessage['parts'];
+};
+
+const copyToClipboard = async (text: string) => {
+  await Clipboard.setStringAsync(text);
 };
 
 const ChatBubble: FC<Props> = ({ role, parts, id }) => {
@@ -20,6 +25,10 @@ const ChatBubble: FC<Props> = ({ role, parts, id }) => {
         const isTextMessage = part.type === 'text';
         const isWeatherData = part.type === 'tool-weather';
         const validMessage = isTextMessage || isWeatherData;
+        const messageData = isTextMessage
+          ? part.text
+          : JSON.stringify(part, null, 2);
+
         return (
           <View key={`${id}-${i}`}>
             {isTextMessage && (
@@ -36,17 +45,20 @@ const ChatBubble: FC<Props> = ({ role, parts, id }) => {
                   isUser && styles.messageUser,
                 ]}
               >
-                {part.text}
+                {messageData}
               </Text>
             )}
             {isWeatherData && (
               <Text style={[styles.message, { color: tColors.text }]}>
-                {JSON.stringify(part, null, 2)}
+                {messageData}
               </Text>
             )}
             {!isUser && validMessage && (
               <View style={styles.actionButtons}>
-                <ActionIconButton name="doc.on.doc" />
+                <ActionIconButton
+                  name="doc.on.doc"
+                  onPress={() => copyToClipboard(messageData)}
+                />
                 <ActionIconButton name="speaker.2" />
                 <ActionIconButton name="hand.thumbsup" />
                 <ActionIconButton name="hand.thumbsdown" />

@@ -1,5 +1,6 @@
 import AnimatedLoading from '@/components/chatUi/AnimatedLoading';
 import ChatBubble from '@/components/chatUi/ChatBubble';
+import ChatHeader from '@/components/chatUi/ChatHeader';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useColors } from '@/hooks/useColors';
 import { generateAPIUrl } from '@/utils';
@@ -20,7 +21,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -33,7 +34,7 @@ export default function App() {
   const [input, setInput] = useState('');
   const [isUserAtBottom, setIsUserAtBottom] = useState(true);
 
-  const { messages, error, sendMessage, status } = useChat({
+  const { messages, error, sendMessage, status, stop } = useChat({
     transport: new DefaultChatTransport({
       fetch: expoFetch as unknown as typeof globalThis.fetch,
       api: generateAPIUrl('/api/chat'),
@@ -44,10 +45,9 @@ export default function App() {
 
   const tColors = useColors();
 
-  if (error) return <Text>{error.message}</Text>;
-
   const showMic = !input;
   const isLoadingAnswer = status === 'submitted';
+  const isStreaming = status === 'streaming';
 
   const onMessageSend = () => {
     if (showMic) {
@@ -82,6 +82,11 @@ export default function App() {
     }
   };
 
+  const getSendIcon = () => {
+    if (isStreaming || isLoadingAnswer) return 'stop.fill';
+    return showMic ? 'waveform' : 'arrow.up';
+  };
+
   const renderMessages: ListRenderItem<Message> = ({ item }) => (
     <ChatBubble
       key={item.id}
@@ -89,6 +94,13 @@ export default function App() {
       parts={item.parts}
       role={item.role}
     />
+  );
+
+  const FooterComponent = () => (
+    <>
+      {isLoadingAnswer ? <AnimatedLoading /> : null}
+      {error && <Text>{error.message}</Text>}
+    </>
   );
 
   return (
@@ -99,6 +111,7 @@ export default function App() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex}
       >
+        <ChatHeader isNewChat={!messages.length} />
         <View style={styles.flex}>
           <FlatList
             ref={flatListRef}
@@ -108,7 +121,7 @@ export default function App() {
             showsVerticalScrollIndicator={false}
             onScroll={handleScroll}
             onContentSizeChange={scrollToBottom}
-            ListFooterComponent={isLoadingAnswer ? <AnimatedLoading /> : null}
+            ListFooterComponent={FooterComponent}
           />
         </View>
         <View style={styles.controls}>
@@ -139,13 +152,10 @@ export default function App() {
               </TouchableOpacity>
             )}
             <TouchableOpacity
-              onPress={onMessageSend}
+              onPress={isStreaming || isLoadingAnswer ? stop : onMessageSend}
               style={[styles.icon, { backgroundColor: tColors.text }]}
             >
-              <IconSymbol
-                name={showMic ? 'waveform' : 'arrow.up'}
-                color={tColors.background}
-              />
+              <IconSymbol name={getSendIcon()} color={tColors.background} />
             </TouchableOpacity>
           </View>
         </View>
