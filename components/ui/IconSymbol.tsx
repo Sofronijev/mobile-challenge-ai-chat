@@ -35,7 +35,8 @@ const MAPPING = {
   'line.horizontal.3.decrease': 'menu',
   ellipsis: 'more-horiz',
   'lock.icloud': 'lock-outline',
-  'stop.fill': 'stop'
+  'stop.fill': 'stop',
+  'arrow.up.arrow.down': 'swap-vert',
 } as IconMapping;
 /**
  * An icon component that uses native SF Symbols on iOS, and Material Icons on Android and web.

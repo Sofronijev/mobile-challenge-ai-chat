@@ -4,6 +4,7 @@ import * as Clipboard from 'expo-clipboard';
 import React, { FC } from 'react';
 import { LayoutChangeEvent, StyleSheet, Text, View } from 'react-native';
 import ActionIconButton from './ActionIconButton';
+import WeatherData from './WeatherData';
 
 type Props = {
   id: string;
@@ -26,12 +27,9 @@ const ChatBubble: FC<Props> = ({ role, parts, id, onLayout }) => {
         const isTextMessage = part.type === 'text';
         const isWeatherData = part.type === 'tool-weather';
         const validMessage = isTextMessage || isWeatherData;
-        const messageData = isTextMessage
-          ? part.text
-          : JSON.stringify(part, null, 2);
 
         return (
-          <View key={`${id}-${i}`} onLayout={onLayout}>
+          <View key={`${id}-${i}`} onLayout={onLayout} style={styles.container}>
             {isTextMessage && (
               <Text
                 style={[
@@ -46,19 +44,23 @@ const ChatBubble: FC<Props> = ({ role, parts, id, onLayout }) => {
                   isUser && styles.messageUser,
                 ]}
               >
-                {messageData}
+                {part.text}
               </Text>
             )}
             {isWeatherData && (
-              <Text style={[styles.message, { color: tColors.text }]}>
-                {messageData}
-              </Text>
+              <WeatherData
+                data={part.output as { location: string; temperature: number }}
+              />
             )}
             {!isUser && validMessage && (
               <View style={styles.actionButtons}>
                 <ActionIconButton
                   name="doc.on.doc"
-                  onPress={() => copyToClipboard(messageData)}
+                  onPress={() =>
+                    copyToClipboard(
+                      isTextMessage ? part.text : JSON.stringify(part)
+                    )
+                  }
                 />
                 <ActionIconButton name="speaker.2" />
                 <ActionIconButton name="hand.thumbsup" />
@@ -78,8 +80,10 @@ export default ChatBubble;
 
 const styles = StyleSheet.create({
   message: {
-    marginVertical: 8,
     fontSize: 16,
+  },
+  container: {
+    marginVertical: 8,
   },
   messageUser: {
     padding: 12,
