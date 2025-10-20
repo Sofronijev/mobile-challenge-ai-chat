@@ -61,13 +61,13 @@ export default function App() {
     }
   }, [messages, flatListHeight, lastUserMsgHeight]);
 
-  const showMic = !input.trim();
+  const emptyInput = !input.trim();
   const isLoadingAnswer = status === 'submitted';
   const isStreaming = status === 'streaming';
   const isWaitingForResponse = isLoadingAnswer || isStreaming;
 
   const onMessageSend = () => {
-    if (showMic) {
+    if (emptyInput) {
       // Record message
     } else {
       Keyboard.dismiss();
@@ -97,7 +97,7 @@ export default function App() {
 
   const getSendIcon = () => {
     if (isWaitingForResponse) return 'stop.fill';
-    return showMic ? 'waveform' : 'arrow.up';
+    return emptyInput ? 'waveform' : 'arrow.up';
   };
 
   const renderMessages: ListRenderItem<Message> = ({ item, index }) => {
@@ -185,7 +185,7 @@ export default function App() {
               autoFocus={true}
               placeholderTextColor={tColors.placeholder}
             />
-            {showMic && (
+            {emptyInput && (
               <TouchableOpacity style={[styles.icon]}>
                 <IconSymbol name="mic" color={tColors.greyIcon} />
               </TouchableOpacity>
