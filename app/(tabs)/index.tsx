@@ -8,7 +8,7 @@ import { generateAPIUrl } from '@/utils';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport, UIDataTypes, UIMessage, UITools } from 'ai';
 import { fetch as expoFetch } from 'expo/fetch';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   FlatList,
   InteractionManager,
@@ -33,7 +33,17 @@ const BOTTOM_THRESHOLD = 20;
 
 export default function App() {
   const [input, setInput] = useState('');
-  const [isUserAtBottom, setIsUserAtBottom] = useState(true);
+  const [isScrollable, setIsScrollable] = useState(true);
+  const [lastUserMsgHeight, setLastUserMsgHeight] = useState(0);
+  const [extraFooterSpace, setExtraFooterSpace] = useState(0);
+  const [flatListHeight, setFlatListHeight] = useState(0);
+  // Controls display options: 
+  // true - autoscroll on new message
+  // false - or put new user message at the top of the screen
+  const [isAutoScroll, setIsAutoScroll] = useState(false);
+
+  const flatListRef = useRef<FlatList>(null);
+  const tColors = useColors();
 
   const { messages, error, sendMessage, status, stop } = useChat({
     transport: new DefaultChatTransport({
@@ -42,11 +52,24 @@ export default function App() {
     }),
     onError: error => console.error(error, 'ERROR'),
   });
-  const flatListRef = useRef<FlatList>(null);
 
-  const tColors = useColors();
+  useEffect(() => {
+    if (!isAutoScroll) {
+      const lastIndex = messages.length - 1;
+      const lastMessage = messages[lastIndex];
+      if (lastMessage?.role === 'user') {
+        setExtraFooterSpace(flatListHeight - lastUserMsgHeight);
 
-  const showMic = !input;
+        flatListRef.current?.scrollToIndex({
+          index: lastIndex,
+          viewPosition: 0,
+          animated: true,
+        });
+      }
+    }
+  }, [messages, flatListHeight, lastUserMsgHeight, isAutoScroll]);
+
+  const showMic = !input.trim();
   const isLoadingAnswer = status === 'submitted';
   const isStreaming = status === 'streaming';
   const isWaitingForResponse = isLoadingAnswer || isStreaming;
@@ -58,6 +81,7 @@ export default function App() {
       Keyboard.dismiss();
       sendMessage({ text: input.trim() });
       setInput('');
+      setIsScrollable(true);
     }
   };
 
@@ -76,13 +100,24 @@ export default function App() {
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+
     const distanceFromBottom =
       contentSize.height - (contentOffset.y + layoutMeasurement.height);
-    setIsUserAtBottom(distanceFromBottom < BOTTOM_THRESHOLD);
+    setIsScrollable(distanceFromBottom < BOTTOM_THRESHOLD);
+
+    const messageContentHeigth =
+      contentSize.height - extraFooterSpace - BOTTOM_THRESHOLD;
+    // if we scroll past the footer hide it
+    if (
+      messageContentHeigth > contentOffset.y + layoutMeasurement.height &&
+      !isWaitingForResponse
+    ) {
+      setExtraFooterSpace(0);
+    }
   };
 
-  const scrollToBottom = () => {
-    if (isUserAtBottom) {
+  const onContentSizeChange = () => {
+    if (isScrollable && isAutoScroll) {
       InteractionManager.runAfterInteractions(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
       });
@@ -94,12 +129,21 @@ export default function App() {
     return showMic ? 'waveform' : 'arrow.up';
   };
 
-  const renderMessages: ListRenderItem<Message> = ({ item }) => (
+  const renderMessages: ListRenderItem<Message> = ({ item, index }) => (
     <ChatBubble
       key={item.id}
       id={item.id}
       parts={item.parts}
       role={item.role}
+      onLayout={event => {
+        if (
+          item.role === 'user' &&
+          index === messages.findLastIndex(msg => msg.role === 'user')
+        ) {
+          const height = event.nativeEvent.layout.height ?? 0;
+          setLastUserMsgHeight(height);
+        }
+      }}
     />
   );
 
@@ -107,6 +151,7 @@ export default function App() {
     <>
       {isLoadingAnswer ? <AnimatedLoading /> : null}
       {error && <Text>{error.message}</Text>}
+      <View style={{ paddingBottom: extraFooterSpace }} />
     </>
   );
 
@@ -128,8 +173,15 @@ export default function App() {
               keyExtractor={keyExtractor}
               showsVerticalScrollIndicator={false}
               onScroll={handleScroll}
-              onContentSizeChange={scrollToBottom}
+              onContentSizeChange={onContentSizeChange}
               ListFooterComponent={FooterComponent}
+              onLayout={e => setFlatListHeight(e.nativeEvent.layout.height)}
+              onScrollToIndexFailed={info => {
+                flatListRef.current?.scrollToOffset({
+                  offset: info.averageItemLength * info.index,
+                  animated: true,
+                });
+              }}
             />
           ) : (
             <ChatNullScreen onSendMessage={sendSuggestion} />

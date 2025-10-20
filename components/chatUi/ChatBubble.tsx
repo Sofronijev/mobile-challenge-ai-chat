@@ -2,20 +2,21 @@ import { useColors } from '@/hooks/useColors';
 import { UIMessage } from 'ai';
 import * as Clipboard from 'expo-clipboard';
 import React, { FC } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { LayoutChangeEvent, StyleSheet, Text, View } from 'react-native';
 import ActionIconButton from './ActionIconButton';
 
 type Props = {
   id: string;
   role: UIMessage['role'];
   parts: UIMessage['parts'];
+  onLayout?: ((event: LayoutChangeEvent) => void) | undefined;
 };
 
 const copyToClipboard = async (text: string) => {
   await Clipboard.setStringAsync(text);
 };
 
-const ChatBubble: FC<Props> = ({ role, parts, id }) => {
+const ChatBubble: FC<Props> = ({ role, parts, id, onLayout }) => {
   const tColors = useColors();
   const isUser = role === 'user';
 
@@ -30,7 +31,7 @@ const ChatBubble: FC<Props> = ({ role, parts, id }) => {
           : JSON.stringify(part, null, 2);
 
         return (
-          <View key={`${id}-${i}`}>
+          <View key={`${id}-${i}`} onLayout={onLayout}>
             {isTextMessage && (
               <Text
                 style={[
