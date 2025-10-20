@@ -11,7 +11,6 @@ import { fetch as expoFetch } from 'expo/fetch';
 import { useEffect, useRef, useState } from 'react';
 import {
   FlatList,
-  InteractionManager,
   Keyboard,
   KeyboardAvoidingView,
   ListRenderItem,
@@ -33,19 +32,14 @@ const BOTTOM_THRESHOLD = 20;
 
 export default function App() {
   const [input, setInput] = useState('');
-  const [isScrollable, setIsScrollable] = useState(true);
   const [lastUserMsgHeight, setLastUserMsgHeight] = useState(0);
   const [extraFooterSpace, setExtraFooterSpace] = useState(0);
   const [flatListHeight, setFlatListHeight] = useState(0);
-  // Controls display options: 
-  // true - autoscroll on new message
-  // false - or put new user message at the top of the screen
-  const [isAutoScroll, setIsAutoScroll] = useState(false);
 
   const flatListRef = useRef<FlatList>(null);
   const tColors = useColors();
 
-  const { messages, error, sendMessage, status, stop } = useChat({
+  const { messages, error, sendMessage, status, stop, regenerate } = useChat({
     transport: new DefaultChatTransport({
       fetch: expoFetch as unknown as typeof globalThis.fetch,
       api: generateAPIUrl('/api/chat'),
@@ -54,20 +48,18 @@ export default function App() {
   });
 
   useEffect(() => {
-    if (!isAutoScroll) {
-      const lastIndex = messages.length - 1;
-      const lastMessage = messages[lastIndex];
-      if (lastMessage?.role === 'user') {
-        setExtraFooterSpace(flatListHeight - lastUserMsgHeight);
+    const lastIndex = messages.length - 1;
+    const lastMessage = messages[lastIndex];
+    if (lastMessage?.role === 'user') {
+      setExtraFooterSpace(flatListHeight - lastUserMsgHeight);
 
-        flatListRef.current?.scrollToIndex({
-          index: lastIndex,
-          viewPosition: 0,
-          animated: true,
-        });
-      }
+      flatListRef.current?.scrollToIndex({
+        index: lastIndex,
+        viewPosition: 0,
+        animated: true,
+      });
     }
-  }, [messages, flatListHeight, lastUserMsgHeight, isAutoScroll]);
+  }, [messages, flatListHeight, lastUserMsgHeight]);
 
   const showMic = !input.trim();
   const isLoadingAnswer = status === 'submitted';
@@ -81,7 +73,6 @@ export default function App() {
       Keyboard.dismiss();
       sendMessage({ text: input.trim() });
       setInput('');
-      setIsScrollable(true);
     }
   };
 
@@ -90,37 +81,17 @@ export default function App() {
     Keyboard.dismiss();
   };
 
-  const onAddFiles = () => {
-    // Add files to chat...
-  };
-
-  const onOpenMic = () => {
-    // Allow voice input
-  };
-
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
 
-    const distanceFromBottom =
-      contentSize.height - (contentOffset.y + layoutMeasurement.height);
-    setIsScrollable(distanceFromBottom < BOTTOM_THRESHOLD);
-
-    const messageContentHeigth =
+    const messageContentHeight =
       contentSize.height - extraFooterSpace - BOTTOM_THRESHOLD;
     // if we scroll past the footer hide it
     if (
-      messageContentHeigth > contentOffset.y + layoutMeasurement.height &&
+      messageContentHeight > contentOffset.y + layoutMeasurement.height &&
       !isWaitingForResponse
     ) {
       setExtraFooterSpace(0);
-    }
-  };
-
-  const onContentSizeChange = () => {
-    if (isScrollable && isAutoScroll) {
-      InteractionManager.runAfterInteractions(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      });
     }
   };
 
@@ -129,23 +100,29 @@ export default function App() {
     return showMic ? 'waveform' : 'arrow.up';
   };
 
-  const renderMessages: ListRenderItem<Message> = ({ item, index }) => (
-    <ChatBubble
-      key={item.id}
-      id={item.id}
-      parts={item.parts}
-      role={item.role}
-      onLayout={event => {
-        if (
-          item.role === 'user' &&
-          index === messages.findLastIndex(msg => msg.role === 'user')
-        ) {
-          const height = event.nativeEvent.layout.height ?? 0;
-          setLastUserMsgHeight(height);
-        }
-      }}
-    />
-  );
+  const renderMessages: ListRenderItem<Message> = ({ item, index }) => {
+    const onRefresh = async () => {
+      await regenerate({ messageId: item.id });
+    };
+    return (
+      <ChatBubble
+        key={item.id}
+        id={item.id}
+        parts={item.parts}
+        role={item.role}
+        onRefresh={onRefresh}
+        onLayout={event => {
+          if (
+            item.role === 'user' &&
+            index === messages.findLastIndex(msg => msg.role === 'user')
+          ) {
+            const height = event.nativeEvent.layout.height ?? 0;
+            setLastUserMsgHeight(height);
+          }
+        }}
+      />
+    );
+  };
 
   const FooterComponent = () => (
     <>
@@ -173,7 +150,6 @@ export default function App() {
               keyExtractor={keyExtractor}
               showsVerticalScrollIndicator={false}
               onScroll={handleScroll}
-              onContentSizeChange={onContentSizeChange}
               ListFooterComponent={FooterComponent}
               onLayout={e => setFlatListHeight(e.nativeEvent.layout.height)}
               onScrollToIndexFailed={info => {
@@ -189,7 +165,6 @@ export default function App() {
         </View>
         <View style={styles.controls}>
           <TouchableOpacity
-            onPress={onAddFiles}
             style={[styles.icon, { backgroundColor: tColors.greyBackground }]}
             disabled={isWaitingForResponse}
           >
@@ -211,7 +186,7 @@ export default function App() {
               placeholderTextColor={tColors.placeholder}
             />
             {showMic && (
-              <TouchableOpacity onPress={onOpenMic} style={[styles.icon]}>
+              <TouchableOpacity style={[styles.icon]}>
                 <IconSymbol name="mic" color={tColors.greyIcon} />
               </TouchableOpacity>
             )}

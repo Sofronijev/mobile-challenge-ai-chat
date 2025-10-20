@@ -11,13 +11,14 @@ type Props = {
   role: UIMessage['role'];
   parts: UIMessage['parts'];
   onLayout?: ((event: LayoutChangeEvent) => void) | undefined;
+  onRefresh: () => Promise<void>;
 };
 
 const copyToClipboard = async (text: string) => {
   await Clipboard.setStringAsync(text);
 };
 
-const ChatBubble: FC<Props> = ({ role, parts, id, onLayout }) => {
+const ChatBubble: FC<Props> = ({ role, parts, id, onLayout, onRefresh }) => {
   const tColors = useColors();
   const isUser = role === 'user';
 
@@ -65,7 +66,10 @@ const ChatBubble: FC<Props> = ({ role, parts, id, onLayout }) => {
                 <ActionIconButton name="speaker.2" />
                 <ActionIconButton name="hand.thumbsup" />
                 <ActionIconButton name="hand.thumbsdown" />
-                <ActionIconButton name="arrow.2.circlepath" />
+                <ActionIconButton
+                  name="arrow.2.circlepath"
+                  onPress={onRefresh}
+                />
                 <ActionIconButton name="tray.and.arrow.up" />
               </View>
             )}
