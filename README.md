@@ -63,3 +63,24 @@ If you need more than Expo Go (e.g., native modules or a custom dev client):
   pnpm expo run:ios
   pnpm expo start
   ```
+
+## My notes
+
+This is a React Native (Expo) chat application I built as part of a coding assignment.
+The project aims to replicate a chat experience as close as possible to ChatGPT.
+
+Below is a summary of the main features I implemented:
+
+- Designed the UI to resemble ChatGPT, including header, input area, messages, and icons (some are approximations).
+
+- Implemented multiline input with buttons for text-to-speech, voice mode, and file attachment (UI only), with icons changing when the user starts typing.
+
+- In the header, added a title with a sidebar button, and an icon for temporary chat when there are no messages; if messages exist, show new message and menu icons (UI only).
+
+- Formatted messages so that newly submitted messages appear at the top of the screen. For AI responses, added action icons underneath for playing the message, thumbs up, thumbs down, sharing (not working), copying, and refreshing (working).
+
+- Added the ability to stop an ongoing AI request after sending a question.
+
+- Added an animated indicator to show when the AI is preparing a response.
+
+- Implemented a weather widget displaying city name and temperature in Fahrenheit, which can be toggled to Celsius by tapping the arrow icon. The weather condition is displayed based on the temperature.
