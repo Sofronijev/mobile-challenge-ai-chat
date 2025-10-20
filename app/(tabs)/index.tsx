@@ -165,10 +165,17 @@ export default function App() {
         </View>
         <View style={styles.controls}>
           <TouchableOpacity
-            style={[styles.icon, { backgroundColor: tColors.greyBackground }]}
+            style={[
+              styles.addIcon,
+              { backgroundColor: tColors.greyBackground },
+            ]}
             disabled={isWaitingForResponse}
           >
-            <IconSymbol name="plus" color={tColors.text} />
+            <IconSymbol
+              name="plus"
+              color={isWaitingForResponse ? tColors.greyIcon : tColors.text}
+              size={30}
+            />
           </TouchableOpacity>
           <View
             style={[
@@ -224,6 +231,12 @@ const styles = StyleSheet.create({
     padding: 12,
     flex: 1,
     fontSize: 16,
+  },
+  addIcon: {
+    marginRight: 8,
+    padding: 8,
+    borderRadius: 22,
+    alignSelf: 'flex-end',
   },
   icon: {
     margin: 8,
