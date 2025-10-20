@@ -84,3 +84,5 @@ Below is a summary of the main features I implemented:
 - Added an animated indicator to show when the AI is preparing a response.
 
 - Implemented a weather widget displaying city name and temperature in Fahrenheit, which can be toggled to Celsius by tapping the arrow icon. The weather condition is displayed based on the temperature.
+
+- Added a Null screen that appears when there are no messages in the chat, showing some suggested messages.
